@@ -1,29 +1,60 @@
+'use strict';
+
 const express = require('express');
 const app = express();
 
-// define endpoint for exercise 4 here
-app.get('/hello/name', (req, res) => {
-  const { first, last } = req.query;
+// Get joke categories and responds with those
+app.get('/jokebook/categories', (req, res) => {
+  const categories = require('./data/categories.json');
 
-  // check for required parameters
-  if (!first || !last) {
-    const missingParams = [];
-    if (!first) {
-      missingParams.push('first');
-    }
-    if (!last) {
-      missingParams.push('last');
-    }
-    const errorMessage = `Missing Required GET parameters: ${missingParams.join(', ')}`;
-    return res.status(400).send(errorMessage);
-  }
-
-  // send greeting
-  const message = `Hello ${first} ${last}`;
-  res.type('text').send(message);
+  res.json(categories);
 });
 
-// start the server
-app.listen(3000, () => {
-  console.log('Server started on port 3000');
+// Get jokes from a joke category and respond with a joke
+// from corresponding category
+app.get('/jokebook/joke/:category', (req, res) => {
+  const categoryName = req.params.category;
+  
+  try {
+    const jokes = require(`./data/${categoryName}.json`);
+    
+    if (!jokes || jokes.length === 0) {
+      return res.status(404).json({ 'error': `no jokes for category ${categoryName}` });
+    }
+
+    const randomIndex = Math.floor(Math.random() * jokes.length);
+    const randomJoke = jokes[randomIndex];
+
+    res.json(randomJoke);
+  } catch (error) {
+    res.status(404).json({ 'error': `no jokes for category ${categoryName}` });
+  }
+});
+
+// Get a random joke from any category
+app.get('/jokebook/joke', (req, res) => {
+  const categories = require('./data/categories.json');
+
+  const categoryIndex = Math.floor(Math.random() * categories.length);
+
+  const categoryName = categories[categoryIndex];
+  try {
+    const jokes = require(`./data/${categoryName}.json`);
+
+    if (!jokes || jokes.length === 0) {
+      return res.status(404).json({'error' : `no jokes for category ${categoryName}`});
+    }
+
+    const randomIndex = Math.floor(Math.random() * jokes.length);
+    const randomJoke = jokes[randomIndex];
+
+    res.json(randomJoke);
+  } catch (error) {
+    res.status(404).json({ 'error': `no jokes for category ${categoryName}` });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });
